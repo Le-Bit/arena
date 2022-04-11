@@ -39,12 +39,12 @@ export class State {
   }
 
   public constructor() {
-    this._myCreeps = getObjectsByPrototype(Creep).filter(i => i.my) as ICreep[];
+    const myCreeps = getObjectsByPrototype(Creep).filter(i => i.my);
     this._enemyCreeps = getObjectsByPrototype(Creep).filter(i => !i.my);
     this._enemyFlag = getObjectsByPrototype(Flag).find(i => !i.my)!;
     this._myTowers = getObjectsByPrototype(StructureTower).filter(i => i.my);
 
-    this._myCreeps = this._myCreeps.reduce((creeps: ICreep[], creep: ICreep) => {
+    this._myCreeps = myCreeps.reduce((creeps: ICreep[], creep: Creep) => {
       if (creep.body.some(i => i.type === ATTACK)) {
         return [...creeps, new MeleeCreep(creep)];
       }
