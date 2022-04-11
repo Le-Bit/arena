@@ -1,27 +1,27 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable no-underscore-dangle */
-import { Flag } from "arena/prototypes";
 import { ATTACK, HEAL, RANGED_ATTACK } from "game/constants";
 import { Creep, StructureTower } from "game/prototypes";
-import { getObjectsByPrototype, getTicks } from "game/utils";
-import { HealerCreep } from "./Healer";
-import { ICreep } from "./main";
-import { MeleeCreep } from "./MeleeAttacker";
-import { RangedCreep } from "./RangedAttacker";
-import { towerControl } from "./Tower";
+import { Flag } from "arena/prototypes";
+import { HealerCreep } from "../creeps/Healer";
+import { ICreep } from "../creeps/MyCreep";
+import { MeleeCreep } from "../creeps/MeleeAttacker";
+import { RangedCreep } from "../creeps/RangedAttacker";
+import { Tower } from "../towers/Tower";
+import { getObjectsByPrototype } from "game/utils";
 
 export class State {
   private _myCreeps: ICreep[];
   private _enemyCreeps: Creep[];
   // private _myFlag: Flag;
   private _enemyFlag: Flag;
-  private _myTowers: StructureTower[];
+  private _myTowers: Tower[];
 
   public get enemyCreeps(): Creep[] {
     return this._enemyCreeps;
   }
 
-  public get myCreeps(): Creep[] {
+  public get myCreeps(): ICreep[] {
     return this._myCreeps;
   }
 
@@ -42,7 +42,7 @@ export class State {
     const myCreeps = getObjectsByPrototype(Creep).filter(i => i.my);
     this._enemyCreeps = getObjectsByPrototype(Creep).filter(i => !i.my);
     this._enemyFlag = getObjectsByPrototype(Flag).find(i => !i.my)!;
-    this._myTowers = getObjectsByPrototype(StructureTower).filter(i => i.my);
+    const myTowers = getObjectsByPrototype(StructureTower).filter(i => i.my);
 
     this._myCreeps = myCreeps.reduce((creeps: ICreep[], creep: Creep) => {
       if (creep.body.some(i => i.type === ATTACK)) {
@@ -56,22 +56,20 @@ export class State {
       }
       return creeps;
     }, []);
+
+    this._myTowers = myTowers.map(tower => new Tower(tower.id));
   }
 
   public run(): void {
     this._myCreeps = this._myCreeps.filter(i => i.exists);
     this._enemyCreeps = this._enemyCreeps.filter(i => i.exists);
 
-    if (getTicks() % 10 === 0) {
-      console.log(`I have ${this._myCreeps.length} creeps`);
-    }
-
     this._myCreeps.forEach(creep => {
       creep.run(this);
     });
 
     this._myTowers.forEach(tower => {
-      towerControl(tower);
+      tower.run();
     });
   }
 }
