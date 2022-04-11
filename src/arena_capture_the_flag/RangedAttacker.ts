@@ -1,22 +1,30 @@
 import { getRange } from "game";
 import { Creep } from "game/prototypes";
 import { flee } from "utils/flee";
+import { ICreep } from "./main";
+import { CreepRole } from "./Role";
 import { State } from "./State";
 
-export function rangedAttacker(state: State, creep: Creep) {
-  const targets = state.enemyCreeps.sort((a, b) => getRange(a, creep) - getRange(b, creep));
-
-  if (targets.length > 0) {
-    creep.rangedAttack(targets[0]);
+export class RangedCreep extends Creep implements ICreep {
+  public constructor(creep: Creep) {
+    super(creep.id);
+    this.role = CreepRole.RANGED;
   }
+  public run(state: State) {
+    const targets = state.enemyCreeps.sort((a, b) => getRange(a, this) - getRange(b, this));
 
-  if (state.enemyFlag) {
-    creep.moveTo(state.enemyFlag);
-  }
+    if (targets.length > 0) {
+      this.rangedAttack(targets[0]);
+    }
 
-  const range = 3;
-  const enemiesInRange = state.enemyCreeps.filter(i => getRange(i, creep) < range);
-  if (enemiesInRange.length > 0) {
-    flee(creep, enemiesInRange, range);
+    if (state.enemyFlag) {
+      this.moveTo(state.enemyFlag);
+    }
+
+    const range = 3;
+    const enemiesInRange = state.enemyCreeps.filter(i => getRange(i, this) < range);
+    if (enemiesInRange.length > 0) {
+      flee(this, enemiesInRange, range);
+    }
   }
 }

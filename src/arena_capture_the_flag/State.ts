@@ -4,14 +4,14 @@ import { Flag } from "arena/prototypes";
 import { ATTACK, HEAL, RANGED_ATTACK } from "game/constants";
 import { Creep, StructureTower } from "game/prototypes";
 import { getObjectsByPrototype, getTicks } from "game/utils";
-import { healer } from "./Healer";
-import { meleeAttack } from "./MeleeAttacker";
-import { rangedAttacker } from "./RangedAttacker";
-import { CreepRole } from "./Role";
+import { HealerCreep } from "./Healer";
+import { ICreep } from "./main";
+import { MeleeCreep } from "./MeleeAttacker";
+import { RangedCreep } from "./RangedAttacker";
 import { towerControl } from "./Tower";
 
 export class State {
-  private _myCreeps: Creep[];
+  private _myCreeps: ICreep[];
   private _enemyCreeps: Creep[];
   // private _myFlag: Flag;
   private _enemyFlag: Flag;
@@ -39,22 +39,23 @@ export class State {
   }
 
   public constructor() {
-    this._myCreeps = getObjectsByPrototype(Creep).filter(i => i.my);
+    this._myCreeps = getObjectsByPrototype(Creep).filter(i => i.my) as ICreep[];
     this._enemyCreeps = getObjectsByPrototype(Creep).filter(i => !i.my);
     this._enemyFlag = getObjectsByPrototype(Flag).find(i => !i.my)!;
     this._myTowers = getObjectsByPrototype(StructureTower).filter(i => i.my);
 
-    this._myCreeps.forEach(creep => {
+    this._myCreeps = this._myCreeps.reduce((creeps: ICreep[], creep: ICreep) => {
       if (creep.body.some(i => i.type === ATTACK)) {
-        creep.role = CreepRole.MELEE;
+        return [...creeps, new MeleeCreep(creep)];
       }
       if (creep.body.some(i => i.type === RANGED_ATTACK)) {
-        creep.role = CreepRole.RANGED;
+        return [...creeps, new RangedCreep(creep)];
       }
       if (creep.body.some(i => i.type === HEAL)) {
-        creep.role = CreepRole.HEALER;
+        return [...creeps, new HealerCreep(creep)];
       }
-    });
+      return creeps;
+    }, []);
   }
 
   public run(): void {
@@ -66,15 +67,7 @@ export class State {
     }
 
     this._myCreeps.forEach(creep => {
-      if (creep.role === CreepRole.MELEE) {
-        meleeAttack(this, creep);
-      }
-      if (creep.role === CreepRole.RANGED) {
-        rangedAttacker(this, creep);
-      }
-      if (creep.role === CreepRole.HEALER) {
-        healer(this, creep);
-      }
+      creep.run(this);
     });
 
     this._myTowers.forEach(tower => {
@@ -82,16 +75,3 @@ export class State {
     });
   }
 }
-
-// let state: State;
-//
-// function stateManager() {
-//   const diagMapSize = enemyFlag.getRangeTo({ x: myFlag.x, y: myFlag.y });
-//   const closestEnemy = Math.min(...enemyCreeps.map(creep => creep.getRangeTo({ x: myFlag.x, y: myFlag.y })));
-//
-//   if (closestEnemy <= 15) setupGoalie();
-// }
-
-// function setupGoalie() {
-//   return;
-// }

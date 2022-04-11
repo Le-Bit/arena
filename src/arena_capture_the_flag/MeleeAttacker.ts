@@ -1,30 +1,28 @@
 import { Creep } from "game/prototypes";
+import { getRange } from "game/utils";
+import { ICreep } from "./main";
 import { CreepRole } from "./Role";
 import { State } from "./State";
-import { getRange } from "game/utils";
 
-export function meleeAttack(state: State, creep: Creep): void {
-  if (!creep.initialPos) {
-    creep.initialPos = { x: creep.x, y: creep.y };
+export class MeleeCreep extends Creep implements ICreep {
+  public constructor(creep: Creep) {
+    super(creep.id);
+    this.role = CreepRole.MELEE;
   }
+  public run(state: State): void {
+    if (!this.initialPos) {
+      this.initialPos = { x: this.x, y: this.y };
+    }
 
-  const targets = state.enemyCreeps
-    .filter(i => getRange(i, creep.initialPos) < 10)
-    .sort((a, b) => getRange(a, creep) - getRange(b, creep));
+    const targets = state.enemyCreeps
+      .filter(i => getRange(i, this.initialPos) < 10)
+      .sort((a, b) => getRange(a, this) - getRange(b, this));
 
-  if (targets.length > 0) {
-    creep.moveTo(targets[0]);
-    creep.attack(targets[0]);
-  } else {
-    creep.moveTo(creep.initialPos);
+    if (targets.length > 0) {
+      this.moveTo(targets[0]);
+      this.attack(targets[0]);
+    } else {
+      this.moveTo(this.initialPos);
+    }
   }
 }
-
-// export class MeleeCreep extends Creep {
-//   public constructor(creep: Creep) {
-//     super();
-//     this.x = creep.x;
-//     this.role = CreepRole.MELEE;
-//     console.log(this);
-//   }
-// }
